@@ -3,8 +3,14 @@ import os
 from openai import OpenAI
 from dotenv import load_dotenv
 
-load_dotenv() # Loads environment variables from .env
-token = os.environ["GITHUB_TOKEN"]
+# Load environment variables - this works both locally and on Vercel
+load_dotenv()
+
+# Get token from environment with fallback
+token = os.environ.get("GITHUB_TOKEN")
+if not token:
+    raise ValueError("GITHUB_TOKEN environment variable is required")
+
 endpoint = "https://models.github.ai/inference"
 model = "openai/gpt-4.1-mini"
 
