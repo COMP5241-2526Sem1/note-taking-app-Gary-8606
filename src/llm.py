@@ -22,10 +22,36 @@ def translate_text(text, target_language):
     messages = [{"role": "user", "content": prompt}]
     return call_llm_model(model, messages)
 
+system_prompt = '''
+Extract the user's notes into the following structured fields:
+1. Title: A concise title of the notes less than 5 words
+2. Notes: The notes based on user input written in full sentences.
+3. Tags (A list): At most 3 Keywords or tags that categorize the content of the notes.
+
+Output in JSON format without ```json. Output title and notes in the language: {lang}.
+Example:
+Input: "Badminton tmr 5pm @polyu".
+Output:
+{{
+    "Title": "Badminton at PolyU",
+    "Notes": "Remember to play badminton at 5pm tomorrow at PolyU.",
+    "Tags": ["badminton", "sports"]
+}}
+'''
+
+# A function to extract structured notes using the LLM model
+def extract_structured_notes(user_input, lang="English"):
+    prompt = f"Extract the user's notes into structured fields in {lang}."
+    messages = [
+        {"role": "system", "content": system_prompt.format(lang=lang)},
+        {"role": "user", "content": user_input}
+        ]
+    response = call_llm_model(model, messages)
+    return response
+
 # main function
 if __name__ == "__main__":
-    text = "Hello, how are you?"
-    target_language = "chinese"
-    translated_text = translate_text(text, target_language)
-    print(f"Original Text: {text}")
-    print(f"Translated Text: {translated_text}")
+    # test the extract notes feature
+    sample_text = "Badminton tmr 5pm @polyu"
+    print("Extracted Structured Notes:")
+    print(extract_structured_notes(sample_text, lang="chinese"))

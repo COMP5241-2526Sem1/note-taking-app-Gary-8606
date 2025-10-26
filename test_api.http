@@ -59,3 +59,30 @@ Content-Type: application/json
 {
   "target_language": "Japanese"
 }
+###
+# Test smart note generation (preview)
+POST http://localhost:5000/api/notes/generate
+Content-Type: application/json
+
+{
+  "input": "Meeting tmr 2pm with John about project review",
+  "language": "English"
+}
+###
+# Test smart note generation and save
+POST http://localhost:5000/api/notes/generate-and-save
+Content-Type: application/json
+
+{
+  "input": "Buy groceries: milk, eggs, bread. Also pick up dry cleaning",
+  "language": "English"
+}
+###
+# Test smart note generation in Chinese
+POST http://localhost:5000/api/notes/generate
+Content-Type: application/json
+
+{
+  "input": "Badminton tmr 5pm @polyu",
+  "language": "Chinese"
+}

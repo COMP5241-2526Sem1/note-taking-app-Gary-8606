@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from src.models.note import Note, db
-from src.llm import translate_text
+from src.llm import translate_text, extract_structured_notes
+import json
 
 note_bp = Blueprint('note', __name__)
 
@@ -128,5 +129,110 @@ def translate_note(note_id):
         }), 200
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@note_bp.route('/notes/generate', methods=['POST'])
+def generate_structured_note():
+    """Generate a structured note from user input using LLM"""
+    try:
+        data = request.json
+        if not data or 'input' not in data:
+            return jsonify({'error': 'input is required'}), 400
+        
+        user_input = data['input'].strip()
+        if not user_input:
+            return jsonify({'error': 'input cannot be empty'}), 400
+            
+        language = data.get('language', 'English')
+        
+        # Generate structured notes using LLM
+        llm_response = extract_structured_notes(user_input, language)
+        
+        # Parse the JSON response from LLM
+        try:
+            structured_data = json.loads(llm_response)
+        except json.JSONDecodeError:
+            # If LLM doesn't return valid JSON, create a basic structure
+            structured_data = {
+                "Title": "Generated Note",
+                "Notes": user_input,
+                "Tags": []
+            }
+        
+        # Ensure all required fields exist
+        title = structured_data.get('Title', 'Generated Note')
+        notes = structured_data.get('Notes', user_input)
+        tags = structured_data.get('Tags', [])
+        
+        return jsonify({
+            'generated': {
+                'title': title,
+                'content': notes,
+                'tags': tags
+            },
+            'original_input': user_input,
+            'language': language
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@note_bp.route('/notes/generate-and-save', methods=['POST'])
+def generate_and_save_note():
+    """Generate a structured note and save it directly"""
+    try:
+        data = request.json
+        if not data or 'input' not in data:
+            return jsonify({'error': 'input is required'}), 400
+        
+        user_input = data['input'].strip()
+        if not user_input:
+            return jsonify({'error': 'input cannot be empty'}), 400
+            
+        language = data.get('language', 'English')
+        
+        # Generate structured notes using LLM
+        llm_response = extract_structured_notes(user_input, language)
+        
+        # Parse the JSON response from LLM
+        try:
+            structured_data = json.loads(llm_response)
+        except json.JSONDecodeError:
+            # If LLM doesn't return valid JSON, create a basic structure
+            structured_data = {
+                "Title": "Generated Note",
+                "Notes": user_input,
+                "Tags": []
+            }
+        
+        # Ensure all required fields exist
+        title = structured_data.get('Title', 'Generated Note')
+        notes = structured_data.get('Notes', user_input)
+        tags = structured_data.get('Tags', [])
+        
+        # Add tags to the content if they exist
+        content = notes
+        if tags:
+            content += f"\n\nTags: {', '.join(tags)}"
+        
+        # Create and save the note
+        max_order = db.session.query(db.func.max(Note.order_index)).scalar() or 0
+        note = Note(title=title, content=content, order_index=max_order + 1)
+        db.session.add(note)
+        db.session.commit()
+        
+        return jsonify({
+            'note': note.to_dict(),
+            'generated': {
+                'title': title,
+                'content': notes,
+                'tags': tags
+            },
+            'original_input': user_input,
+            'language': language
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
 

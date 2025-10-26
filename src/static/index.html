@@ -105,6 +105,25 @@
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
+        .smart-note-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .smart-note-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
         .notes-list {
             max-height: 500px;
             overflow-y: auto;
@@ -509,6 +528,138 @@
                 padding: 20px;
             }
         }
+
+        /* Smart Note Generation Modal Styles */
+        .smart-input-area {
+            margin-bottom: 20px;
+        }
+
+        .smart-input {
+            width: 100%;
+            min-height: 80px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            line-height: 1.4;
+        }
+
+        .smart-input:focus {
+            outline: none;
+            border-color: #28a745;
+        }
+
+        .smart-input::placeholder {
+            color: #6c757d;
+            font-style: italic;
+        }
+
+        .language-selection {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .language-selection label {
+            font-weight: 600;
+            color: #333;
+            white-space: nowrap;
+        }
+
+        .language-selection select {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: white;
+        }
+
+        .preview-section {
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .preview-section.show {
+            display: block;
+        }
+
+        .preview-section h4 {
+            color: #28a745;
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .preview-field {
+            margin-bottom: 15px;
+        }
+
+        .preview-field:last-child {
+            margin-bottom: 0;
+        }
+
+        .preview-field label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .preview-content {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 12px;
+            min-height: 40px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+
+        .tags-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            min-height: 30px;
+            align-items: center;
+        }
+
+        .tag-item {
+            background: #28a745;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .btn-generate {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+
+        .btn-generate:hover {
+            background: linear-gradient(135deg, #218838 0%, #1e7e6f 100%);
+            transform: translateY(-1px);
+        }
+
+        .btn-generate:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -522,6 +673,7 @@
             <div class="sidebar">
                 <input type="text" class="search-box" id="searchBox" placeholder="🔍 Search notes...">
                 <button class="new-note-btn" id="newNoteBtn">✨ New Note</button>
+                <button class="smart-note-btn" id="smartNoteBtn">🤖 Smart Note</button>
                 
                 <div class="notes-list" id="notesList">
                     <div class="loading">Loading notes...</div>
@@ -556,6 +708,65 @@
                     <h3>Welcome to NoteTaker!</h3>
                     <p>Select an existing note or create a new one to get started.</p>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Note Generation Modal -->
+    <div id="smartNoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">🤖 Smart Note Generation</h3>
+                <button class="close" id="closeSmartNoteModal">&times;</button>
+            </div>
+            
+            <div class="smart-input-area">
+                <label for="smartInput" class="form-label">Quick Input:</label>
+                <textarea id="smartInput" class="smart-input" 
+                          placeholder="Type something quick like:
+• Meeting tmr 2pm with John about project
+• Buy groceries: milk, eggs, bread
+• Call dentist for appointment next week
+• Review presentation for Friday meeting
+
+I'll help you turn it into a structured note!"></textarea>
+            </div>
+
+            <div class="language-selection">
+                <label for="noteLanguage">Generate in:</label>
+                <select id="noteLanguage">
+                    <option value="English">English</option>
+                    <option value="Spanish">Spanish (Español)</option>
+                    <option value="French">French (Français)</option>
+                    <option value="German">German (Deutsch)</option>
+                    <option value="Chinese">Chinese (中文)</option>
+                    <option value="Japanese">Japanese (日本語)</option>
+                    <option value="Korean">Korean (한국어)</option>
+                </select>
+            </div>
+
+            <div class="preview-section" id="notePreview">
+                <h4>📝 Generated Structured Note</h4>
+                <div class="preview-field">
+                    <label>Title:</label>
+                    <div class="preview-content" id="previewTitle"></div>
+                </div>
+                <div class="preview-field">
+                    <label>Notes:</label>
+                    <div class="preview-content" id="previewContent"></div>
+                </div>
+                <div class="preview-field">
+                    <label>Tags:</label>
+                    <div class="preview-content">
+                        <div class="tags-preview" id="previewTags"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn btn-generate" id="generateBtn">🤖 Generate Structure</button>
+                <button class="btn btn-save" id="saveGeneratedBtn" style="display: none;">💾 Save Note</button>
+                <button class="btn" id="cancelSmartNoteBtn">Cancel</button>
             </div>
         </div>
     </div>
@@ -632,6 +843,7 @@
                 this.isLoading = false;
                 this.draggedNoteId = null;
                 this.translatedData = null;
+                this.generatedNoteData = null;
                 this.init();
             }
 
@@ -642,6 +854,7 @@
 
             bindEvents() {
                 document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
+                document.getElementById('smartNoteBtn').addEventListener('click', () => this.openSmartNoteModal());
                 document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
                 document.getElementById('translateBtn').addEventListener('click', () => this.openTranslateModal());
                 document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
@@ -661,6 +874,19 @@
                 document.getElementById('noteTitle').addEventListener('input', autoSave);
                 document.getElementById('noteContent').addEventListener('input', autoSave);
                 
+                // Smart Note Generation modal events
+                document.getElementById('closeSmartNoteModal').addEventListener('click', () => this.closeSmartNoteModal());
+                document.getElementById('cancelSmartNoteBtn').addEventListener('click', () => this.closeSmartNoteModal());
+                document.getElementById('generateBtn').addEventListener('click', () => this.generateStructuredNote());
+                document.getElementById('saveGeneratedBtn').addEventListener('click', () => this.saveGeneratedNote());
+                
+                // Close smart note modal when clicking outside
+                document.getElementById('smartNoteModal').addEventListener('click', (e) => {
+                    if (e.target === document.getElementById('smartNoteModal')) {
+                        this.closeSmartNoteModal();
+                    }
+                });
+
                 // Translation modal events
                 document.getElementById('closeTranslateModal').addEventListener('click', () => this.closeTranslateModal());
                 document.getElementById('cancelTranslateBtn').addEventListener('click', () => this.closeTranslateModal());
@@ -962,6 +1188,124 @@
                     // Reload notes on error to restore original order
                     await this.loadNotes();
                     this.showMessage(`Error reordering notes: ${error.message}`, 'error');
+                }
+            }
+
+            openSmartNoteModal() {
+                // Reset form
+                document.getElementById('smartInput').value = '';
+                document.getElementById('noteLanguage').value = 'English';
+                document.getElementById('notePreview').classList.remove('show');
+                document.getElementById('saveGeneratedBtn').style.display = 'none';
+                
+                // Show modal
+                document.getElementById('smartNoteModal').style.display = 'block';
+                document.getElementById('smartInput').focus();
+                this.generatedNoteData = null;
+            }
+
+            closeSmartNoteModal() {
+                document.getElementById('smartNoteModal').style.display = 'none';
+                this.generatedNoteData = null;
+            }
+
+            async generateStructuredNote() {
+                const userInput = document.getElementById('smartInput').value.trim();
+                if (!userInput) {
+                    this.showMessage('Please enter some text to generate a structured note', 'error');
+                    return;
+                }
+
+                const language = document.getElementById('noteLanguage').value;
+                const generateBtn = document.getElementById('generateBtn');
+                const originalText = generateBtn.innerHTML;
+                
+                try {
+                    // Show loading state
+                    generateBtn.disabled = true;
+                    generateBtn.innerHTML = '<span class="loading-spinner"></span>Generating...';
+                    
+                    const response = await fetch('/api/notes/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            input: userInput,
+                            language: language 
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Generation failed');
+                    }
+
+                    this.generatedNoteData = await response.json();
+                    
+                    // Display generated content
+                    document.getElementById('previewTitle').textContent = this.generatedNoteData.generated.title;
+                    document.getElementById('previewContent').textContent = this.generatedNoteData.generated.content;
+                    
+                    // Display tags
+                    const tagsContainer = document.getElementById('previewTags');
+                    tagsContainer.innerHTML = '';
+                    if (this.generatedNoteData.generated.tags && this.generatedNoteData.generated.tags.length > 0) {
+                        this.generatedNoteData.generated.tags.forEach(tag => {
+                            const tagElement = document.createElement('span');
+                            tagElement.className = 'tag-item';
+                            tagElement.textContent = tag;
+                            tagsContainer.appendChild(tagElement);
+                        });
+                    } else {
+                        tagsContainer.innerHTML = '<span style="color: #6c757d; font-style: italic;">No tags generated</span>';
+                    }
+                    
+                    // Show preview and save button
+                    document.getElementById('notePreview').classList.add('show');
+                    document.getElementById('saveGeneratedBtn').style.display = 'inline-block';
+                    
+                    this.showMessage('Structured note generated successfully!', 'success');
+                } catch (error) {
+                    this.showMessage(`Generation error: ${error.message}`, 'error');
+                } finally {
+                    // Restore button state
+                    generateBtn.disabled = false;
+                    generateBtn.innerHTML = originalText;
+                }
+            }
+
+            async saveGeneratedNote() {
+                if (!this.generatedNoteData) return;
+                
+                try {
+                    const response = await fetch('/api/notes/generate-and-save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            input: this.generatedNoteData.original_input,
+                            language: this.generatedNoteData.language
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Failed to save note');
+                    }
+
+                    const result = await response.json();
+                    
+                    // Add to notes list and refresh
+                    this.notes.unshift(result.note);
+                    this.renderNotesList();
+                    
+                    // Select the new note
+                    this.selectNote(result.note.id);
+                    
+                    // Close modal
+                    this.closeSmartNoteModal();
+                    
+                    this.showMessage('Smart note created and saved successfully!', 'success');
+                } catch (error) {
+                    this.showMessage(`Error saving note: ${error.message}`, 'error');
                 }
             }
 
