@@ -35,3 +35,27 @@ Content-Type: application/json
 {
   "note_ids": [3, 1, 2]
 }
+###
+# Test translation to Spanish (replace ID with actual note ID)
+POST http://localhost:5000/api/notes/1/translate
+Content-Type: application/json
+
+{
+  "target_language": "Spanish"
+}
+###
+# Test translation to French (replace ID with actual note ID)
+POST http://localhost:5000/api/notes/1/translate
+Content-Type: application/json
+
+{
+  "target_language": "French"
+}
+###
+# Test translation to Japanese (replace ID with actual note ID)
+POST http://localhost:5000/api/notes/1/translate
+Content-Type: application/json
+
+{
+  "target_language": "Japanese"
+}
