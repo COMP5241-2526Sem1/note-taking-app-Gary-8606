@@ -1,29 +1,76 @@
 # import libraries
 import os
+import requests
 from openai import OpenAI
 from dotenv import load_dotenv
 
 # Load environment variables - this works both locally and on Vercel
 load_dotenv()
 
-# Get token from environment with fallback
-token = os.environ.get("GITHUB_TOKEN")
-if not token:
-    raise ValueError("GITHUB_TOKEN environment variable is required")
+# Get token from environment with fallback - strip whitespace/newlines
+token = os.environ.get("GITHUB_TOKEN", "").strip()
 
 endpoint = "https://models.github.ai/inference"
-model = "openai/gpt-4.1-mini"
+model = "openai/gpt-4.1-mini"  # Using GPT-4.1-mini with GitHub Models
 
-# A function to call an LLM model and return the response
+# A function to call an LLM model and return the response using direct HTTP requests
 def call_llm_model(model, messages, temperature=1.0, top_p=1.0):
-    client = OpenAI(base_url=endpoint,api_key=token)
-    response = client.chat.completions.create(
-        messages=messages, 
-        temperature=temperature, top_p=top_p,model=model)
-    return response.choices[0].message.content
+    if not token:
+        raise ValueError("GITHUB_TOKEN environment variable is required for AI features")
+    
+    # Use direct HTTP requests instead of OpenAI client for better compatibility with Vercel
+    try:
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {token}"
+        }
+        
+        payload = {
+            "model": model,
+            "messages": messages,
+            "temperature": temperature,
+            "top_p": top_p
+        }
+        
+        response = requests.post(
+            f"{endpoint}/chat/completions",
+            headers=headers,
+            json=payload,
+            timeout=30
+        )
+        
+        if response.status_code == 401:
+            raise Exception("Invalid GitHub token. Please check your GITHUB_TOKEN environment variable.")
+        elif response.status_code == 429:
+            raise Exception("Rate limit exceeded. Please try again later.")
+        elif response.status_code != 200:
+            raise Exception(f"API error (status {response.status_code}): {response.text}")
+        
+        result = response.json()
+        return result["choices"][0]["message"]["content"]
+        
+    except requests.exceptions.ConnectionError as e:
+        import sys
+        print(f"Connection Error: {str(e)}", file=sys.stderr)
+        raise Exception("Unable to connect to GitHub AI API. The service may be temporarily unavailable.")
+    except requests.exceptions.Timeout:
+        raise Exception("Request to GitHub AI API timed out. Please try again.")
+    except requests.exceptions.RequestException as e:
+        import sys
+        print(f"Request Error: {type(e).__name__}: {str(e)}", file=sys.stderr)
+        raise Exception(f"Request failed: {str(e)}")
+    except KeyError as e:
+        raise Exception(f"Unexpected API response format: {str(e)}")
+    except Exception as e:
+        import sys
+        print(f"LLM API Error: {type(e).__name__}: {str(e)}", file=sys.stderr)
+        raise
 
 # A function to translate text using the LLM model
 def translate_text(text, target_language):
+    if not token:
+        raise ValueError("GITHUB_TOKEN is not configured. Please set the GITHUB_TOKEN environment variable to use translation features.")
+    
     prompt = f"Translate the following text to {target_language}:\n\n{text}"
     messages = [{"role": "user", "content": prompt}]
     return call_llm_model(model, messages)

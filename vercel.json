@@ -16,6 +16,14 @@
       "dest": "/api/index.py"
     },
     {
+      "src": "/shares/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
+      "src": "/shared/(.*)",
+      "dest": "/api/index.py"
+    },
+    {
       "src": "/",
       "dest": "/public/index.html"
     },

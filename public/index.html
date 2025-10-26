@@ -1296,16 +1296,26 @@ I'll help you turn it into a structured note!"></textarea>
             }
 
             bindEvents() {
-                document.getElementById('newNoteBtn').addEventListener('click', () => this.createNewNote());
-                document.getElementById('templatesBtn').addEventListener('click', () => this.openTemplatesModal());
-                document.getElementById('advancedSearchBtn').addEventListener('click', () => this.openAdvancedSearchModal());
-                document.getElementById('shareBtn').addEventListener('click', () => this.openShareModal());
-                document.getElementById('smartNoteBtn').addEventListener('click', () => this.openSmartNoteModal());
-                document.getElementById('templateNoteBtn').addEventListener('click', () => this.openTemplatesModal());
-                document.getElementById('saveBtn').addEventListener('click', () => this.saveNote());
-                document.getElementById('translateBtn').addEventListener('click', () => this.openTranslateModal());
-                document.getElementById('deleteBtn').addEventListener('click', () => this.deleteNote());
-                document.getElementById('searchBox').addEventListener('input', (e) => this.searchNotes(e.target.value));
+                // Helper function to safely add event listeners
+                const addListener = (id, event, handler) => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener(event, handler);
+                    } else {
+                        console.warn(`Element with id "${id}" not found`);
+                    }
+                };
+
+                // Main action buttons
+                addListener('newNoteBtn', 'click', () => this.createNewNote());
+                addListener('templatesBtn', 'click', () => this.openTemplatesModal());
+                addListener('advancedSearchBtn', 'click', () => this.openAdvancedSearchModal());
+                addListener('shareBtn', 'click', () => this.openShareModal());
+                addListener('smartNoteBtn', 'click', () => this.openSmartNoteModal());
+                addListener('saveBtn', 'click', () => this.saveNote());
+                addListener('translateBtn', 'click', () => this.openTranslateModal());
+                addListener('deleteBtn', 'click', () => this.deleteNote());
+                addListener('searchBox', 'input', (e) => this.searchNotes(e.target.value));
                 
                 // Auto-save on content change (debounced)
                 let saveTimeout;
@@ -1318,95 +1328,101 @@ I'll help you turn it into a structured note!"></textarea>
                     }, 2000);
                 };
                 
-                document.getElementById('noteTitle').addEventListener('input', autoSave);
-                document.getElementById('noteContent').addEventListener('input', autoSave);
+                addListener('noteTitle', 'input', autoSave);
+                addListener('noteContent', 'input', autoSave);
                 
                 // Templates modal events
-                document.getElementById('closeTemplatesModal').addEventListener('click', () => this.closeTemplatesModal());
-                document.getElementById('cancelTemplatesBtn').addEventListener('click', () => this.closeTemplatesModal());
-                document.getElementById('createFromTemplateBtn').addEventListener('click', () => this.createNoteFromTemplate());
+                addListener('closeTemplatesModal', 'click', () => this.closeTemplatesModal());
+                addListener('cancelTemplatesBtn', 'click', () => this.closeTemplatesModal());
+                addListener('createFromTemplateBtn', 'click', () => this.createNoteFromTemplate());
                 
                 // Close templates modal when clicking outside
-                document.getElementById('templatesModal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('templatesModal')) {
-                        this.closeTemplatesModal();
-                    }
-                });
-
-                // Templates modal events
-                document.getElementById('closeTemplatesModal').addEventListener('click', () => this.closeTemplatesModal());
-                document.getElementById('cancelTemplatesBtn').addEventListener('click', () => this.closeTemplatesModal());
-                document.getElementById('createFromTemplateBtn').addEventListener('click', () => this.createNoteFromTemplate());
-                
-                // Close templates modal when clicking outside
-                document.getElementById('templatesModal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('templatesModal')) {
-                        this.closeTemplatesModal();
-                    }
-                });
+                const templatesModal = document.getElementById('templatesModal');
+                if (templatesModal) {
+                    templatesModal.addEventListener('click', (e) => {
+                        if (e.target === templatesModal) {
+                            this.closeTemplatesModal();
+                        }
+                    });
+                }
 
                 // Smart Note Generation modal events
-                document.getElementById('closeSmartNoteModal').addEventListener('click', () => this.closeSmartNoteModal());
-                document.getElementById('cancelSmartNoteBtn').addEventListener('click', () => this.closeSmartNoteModal());
-                document.getElementById('generateBtn').addEventListener('click', () => this.generateStructuredNote());
-                document.getElementById('saveGeneratedBtn').addEventListener('click', () => this.saveGeneratedNote());
+                addListener('closeSmartNoteModal', 'click', () => this.closeSmartNoteModal());
+                addListener('cancelSmartNoteBtn', 'click', () => this.closeSmartNoteModal());
+                addListener('generateBtn', 'click', () => this.generateStructuredNote());
+                addListener('saveGeneratedBtn', 'click', () => this.saveGeneratedNote());
                 
                 // Close smart note modal when clicking outside
-                document.getElementById('smartNoteModal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('smartNoteModal')) {
-                        this.closeSmartNoteModal();
-                    }
-                });
+                const smartNoteModal = document.getElementById('smartNoteModal');
+                if (smartNoteModal) {
+                    smartNoteModal.addEventListener('click', (e) => {
+                        if (e.target === smartNoteModal) {
+                            this.closeSmartNoteModal();
+                        }
+                    });
+                }
 
                 // Advanced Search modal events
-                document.getElementById('closeAdvancedSearchModal').addEventListener('click', () => this.closeAdvancedSearchModal());
-                document.getElementById('cancelAdvancedSearchBtn').addEventListener('click', () => this.closeAdvancedSearchModal());
-                document.getElementById('performSearchBtn').addEventListener('click', () => this.performAdvancedSearch());
-                document.getElementById('clearSearchBtn').addEventListener('click', () => this.clearAdvancedSearch());
+                addListener('closeAdvancedSearchModal', 'click', () => this.closeAdvancedSearchModal());
+                addListener('cancelAdvancedSearchBtn', 'click', () => this.closeAdvancedSearchModal());
+                addListener('performSearchBtn', 'click', () => this.performAdvancedSearch());
+                addListener('clearSearchBtn', 'click', () => this.clearAdvancedSearch());
                 
                 // Search on Enter key
-                document.getElementById('searchQuery').addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        this.performAdvancedSearch();
-                    }
-                });
+                const searchQuery = document.getElementById('searchQuery');
+                if (searchQuery) {
+                    searchQuery.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            e.preventDefault();
+                            this.performAdvancedSearch();
+                        }
+                    });
+                }
 
                 // Close advanced search modal when clicking outside
-                document.getElementById('advancedSearchModal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('advancedSearchModal')) {
-                        this.closeAdvancedSearchModal();
-                    }
-                });
+                const advancedSearchModal = document.getElementById('advancedSearchModal');
+                if (advancedSearchModal) {
+                    advancedSearchModal.addEventListener('click', (e) => {
+                        if (e.target === advancedSearchModal) {
+                            this.closeAdvancedSearchModal();
+                        }
+                    });
+                }
 
                 // Share modal events
-                document.getElementById('closeShareModal').addEventListener('click', () => this.closeShareModal());
-                document.getElementById('cancelShareBtn').addEventListener('click', () => this.closeShareModal());
-                document.getElementById('createShareBtn').addEventListener('click', () => this.createShareLink());
-                document.getElementById('copyUrlBtn').addEventListener('click', () => {
+                addListener('closeShareModal', 'click', () => this.closeShareModal());
+                addListener('cancelShareBtn', 'click', () => this.closeShareModal());
+                addListener('createShareBtn', 'click', () => this.createShareLink());
+                addListener('copyUrlBtn', 'click', () => {
                     const url = document.getElementById('shareUrl').value;
                     this.copyToClipboard(url);
                 });
 
                 // Close share modal when clicking outside
-                document.getElementById('shareModal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('shareModal')) {
-                        this.closeShareModal();
-                    }
-                });
+                const shareModal = document.getElementById('shareModal');
+                if (shareModal) {
+                    shareModal.addEventListener('click', (e) => {
+                        if (e.target === shareModal) {
+                            this.closeShareModal();
+                        }
+                    });
+                }
 
                 // Translation modal events
-                document.getElementById('closeTranslateModal').addEventListener('click', () => this.closeTranslateModal());
-                document.getElementById('cancelTranslateBtn').addEventListener('click', () => this.closeTranslateModal());
-                document.getElementById('doTranslateBtn').addEventListener('click', () => this.translateNote());
-                document.getElementById('useTranslationBtn').addEventListener('click', () => this.useTranslation());
+                addListener('closeTranslateModal', 'click', () => this.closeTranslateModal());
+                addListener('cancelTranslateBtn', 'click', () => this.closeTranslateModal());
+                addListener('doTranslateBtn', 'click', () => this.translateNote());
+                addListener('useTranslationBtn', 'click', () => this.useTranslation());
                 
                 // Close modal when clicking outside
-                document.getElementById('translateModal').addEventListener('click', (e) => {
-                    if (e.target === document.getElementById('translateModal')) {
-                        this.closeTranslateModal();
-                    }
-                });
+                const translateModal = document.getElementById('translateModal');
+                if (translateModal) {
+                    translateModal.addEventListener('click', (e) => {
+                        if (e.target === translateModal) {
+                            this.closeTranslateModal();
+                        }
+                    });
+                }
             }
 
             async loadNotes() {

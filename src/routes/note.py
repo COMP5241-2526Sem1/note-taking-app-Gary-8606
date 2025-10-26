@@ -115,8 +115,29 @@ def translate_note(note_id):
         target_language = data['target_language']
         
         # Translate both title and content
-        translated_title = translate_text(note.title, target_language) if note.title else ""
-        translated_content = translate_text(note.content, target_language) if note.content else ""
+        try:
+            translated_title = translate_text(note.title, target_language) if note.title else ""
+            translated_content = translate_text(note.content, target_language) if note.content else ""
+        except ValueError as ve:
+            # Handle missing GITHUB_TOKEN
+            return jsonify({
+                'error': str(ve),
+                'setup_instructions': 'Please configure a valid GitHub Personal Access Token with AI API access in your Vercel environment variables.'
+            }), 503
+        except Exception as translation_error:
+            # Handle API errors
+            error_msg = str(translation_error)
+            if "Invalid GitHub token" in error_msg or "Unauthorized" in error_msg:
+                return jsonify({
+                    'error': 'GitHub token is not authorized for AI API access',
+                    'instructions': [
+                        '1. Visit https://github.com/marketplace/models to sign up for GitHub Models',
+                        '2. Generate a new Personal Access Token with AI/Models permissions',
+                        '3. Update GITHUB_TOKEN in Vercel environment variables',
+                        '4. Redeploy the application'
+                    ]
+                }), 401
+            return jsonify({'error': f'Translation API error: {error_msg}'}), 502
         
         return jsonify({
             'original': {
@@ -436,9 +457,164 @@ def get_note_shares(note_id):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@note_bp.route('/shared/<share_token>', methods=['GET'])
+def get_shared_note_page(share_token):
+    """Access a shared note by token - returns HTML page"""
+    try:
+        shared_note = SharedNote.query.filter_by(share_token=share_token).first()
+        if not shared_note:
+            return render_template_string('''
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Note Not Found</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+                        .error { color: #d32f2f; }
+                    </style>
+                </head>
+                <body>
+                    <h1 class="error">Shared Note Not Found</h1>
+                    <p>The shared note you're looking for doesn't exist or has been removed.</p>
+                </body>
+                </html>
+            '''), 404
+        
+        if not shared_note.is_accessible():
+            error_msg = 'This shared link has expired' if shared_note.is_expired() else 'This shared link is no longer active'
+            return render_template_string(f'''
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Link Unavailable</title>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }}
+                        .error {{ color: #d32f2f; }}
+                    </style>
+                </head>
+                <body>
+                    <h1 class="error">Link Unavailable</h1>
+                    <p>{error_msg}</p>
+                </body>
+                </html>
+            '''), 410 if shared_note.is_expired() else 403
+        
+        # Check if password is required
+        if shared_note.password_hash:
+            password = request.args.get('password')
+            if not password or not shared_note.check_password(password):
+                return render_template_string('''
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Password Required</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
+                            input, button { padding: 10px; margin: 10px 0; }
+                            button { background: #1976d2; color: white; border: none; cursor: pointer; }
+                            button:hover { background: #1565c0; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1>🔒 Password Required</h1>
+                        <p>This shared note is password protected.</p>
+                        <form method="get">
+                            <input type="password" name="password" placeholder="Enter password" required>
+                            <br>
+                            <button type="submit">View Note</button>
+                        </form>
+                    </body>
+                    </html>
+                '''), 200
+        
+        # Increment view count
+        shared_note.increment_view_count()
+        
+        # Return HTML page with the note
+        return render_template_string('''
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>{{ note.title }}</title>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <style>
+                    body {
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        max-width: 800px;
+                        margin: 0 auto;
+                        padding: 20px;
+                        background: #f5f5f5;
+                    }
+                    .note-container {
+                        background: white;
+                        border-radius: 8px;
+                        padding: 30px;
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                    }
+                    h1 {
+                        color: #333;
+                        margin-bottom: 10px;
+                    }
+                    .meta {
+                        color: #666;
+                        font-size: 14px;
+                        margin-bottom: 20px;
+                        padding-bottom: 15px;
+                        border-bottom: 1px solid #eee;
+                    }
+                    .content {
+                        white-space: pre-wrap;
+                        word-wrap: break-word;
+                        line-height: 1.6;
+                        color: #444;
+                    }
+                    .footer {
+                        margin-top: 30px;
+                        padding-top: 20px;
+                        border-top: 1px solid #eee;
+                        text-align: center;
+                        color: #999;
+                        font-size: 12px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="note-container">
+                    <h1>{{ note.title }}</h1>
+                    <div class="meta">
+                        Created: {{ note.created_at.strftime('%B %d, %Y at %I:%M %p') }}
+                        • Views: {{ view_count }}
+                    </div>
+                    <div class="content">{{ note.content }}</div>
+                    <div class="footer">
+                        This is a shared note from Note Taking App
+                    </div>
+                </div>
+            </body>
+            </html>
+        ''', note=shared_note.note, view_count=shared_note.view_count)
+        
+    except Exception as e:
+        return render_template_string(f'''
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Error</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }}
+                    .error {{ color: #d32f2f; }}
+                </style>
+            </head>
+            <body>
+                <h1 class="error">Error</h1>
+                <p>An error occurred: {str(e)}</p>
+            </body>
+            </html>
+        '''), 500
+
 @note_bp.route('/shares/<share_token>', methods=['GET'])
 def get_shared_note(share_token):
-    """Access a shared note by token"""
+    """Access a shared note by token - API endpoint (JSON response)"""
     try:
         shared_note = SharedNote.query.filter_by(share_token=share_token).first()
         if not shared_note:
@@ -477,6 +653,11 @@ def get_shared_note(share_token):
         
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@note_bp.route('/api/shares/<share_token>', methods=['GET'])
+def get_shared_note_api(share_token):
+    """API alias for getting shared notes"""
+    return get_shared_note(share_token)
 
 @note_bp.route('/shares/<share_token>', methods=['DELETE'])
 def revoke_share_link(share_token):
