@@ -1,0 +1,88 @@
+# Get all notes
+GET http://localhost:5000/api/notes
+###
+# Create first test note
+POST http://localhost:5000/api/notes
+Content-Type: application/json
+
+{
+  "title": "First Note",
+  "content": "This is the first note for testing drag and drop."
+}
+###
+# Create second test note
+POST http://localhost:5000/api/notes
+Content-Type: application/json
+
+{
+  "title": "Second Note", 
+  "content": "This is the second note for testing drag and drop."
+}
+###
+# Create third test note
+POST http://localhost:5000/api/notes
+Content-Type: application/json
+
+{
+  "title": "Third Note",
+  "content": "This is the third note for testing drag and drop."
+}
+###
+# Test reordering notes (replace IDs with actual note IDs from the GET response above)
+PUT http://localhost:5000/api/notes/reorder
+Content-Type: application/json
+
+{
+  "note_ids": [3, 1, 2]
+}
+###
+# Test translation to Spanish (replace ID with actual note ID)
+POST http://localhost:5000/api/notes/1/translate
+Content-Type: application/json
+
+{
+  "target_language": "Spanish"
+}
+###
+# Test translation to French (replace ID with actual note ID)
+POST http://localhost:5000/api/notes/1/translate
+Content-Type: application/json
+
+{
+  "target_language": "French"
+}
+###
+# Test translation to Japanese (replace ID with actual note ID)
+POST http://localhost:5000/api/notes/1/translate
+Content-Type: application/json
+
+{
+  "target_language": "Japanese"
+}
+###
+# Test smart note generation (preview)
+POST http://localhost:5000/api/notes/generate
+Content-Type: application/json
+
+{
+  "input": "Meeting tmr 2pm with John about project review",
+  "language": "English"
+}
+###
+# Test smart note generation and save
+POST http://localhost:5000/api/notes/generate-and-save
+Content-Type: application/json
+
+{
+  "input": "Buy groceries: milk, eggs, bread. Also pick up dry cleaning",
+  "language": "English"
+}
+###
+# Test smart note generation in Chinese
+POST http://localhost:5000/api/notes/generate
+Content-Type: application/json
+
+{
+  "input": "Badminton tmr 5pm @polyu",
+  "language": "Chinese"
+}
