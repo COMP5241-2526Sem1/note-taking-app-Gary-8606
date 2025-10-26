@@ -23,7 +23,7 @@ def create_note():
         
         # Get the highest order_index and add 1 to put new notes at the end
         max_order = db.session.query(db.func.max(Note.order_index)).scalar() or 0
-        note = Note(title=data['title'], content=data['content'], order_index=max_order + 1)
+        note = Note(title=data['title'], content=data['content'], order_index=max_order + 1, user_id=1)
         db.session.add(note)
         db.session.commit()
         return jsonify(note.to_dict()), 201

@@ -1,9 +1,35 @@
 # Vercel Deployment Guide
 
-## Prerequisites
+## 🚀 Deploying to Vercel
 
-1. **Supabase Database**: Create a Supabase project at https://supabase.com
-2. **GitHub Repository**: Push your code to GitHub
+### Prerequisites
+1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
+2. **Supabase Database**: Create a PostgreSQL database at [supabase.com](https://supabase.com)
+3. **GitHub Repository**: Code should be in a GitHub repository
+
+### Step 1: Install Vercel CLI
+```bash
+npm install -g vercel
+```
+
+### Step 2: Login to Vercel
+```bash
+vercel login
+```
+
+### Step 3: Set up Environment Variables
+
+In your Vercel project dashboard, add these environment variables:
+
+#### Required Environment Variables:
+- `DATABASE_URL` - Your Supabase PostgreSQL connection string
+  ```
+  postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+  ```
+- `FLASK_CONFIG` - Set to `production`
+- `SECRET_KEY` - Generate a secure random string
+- `OPENAI_API_KEY` - Your OpenAI API key (for AI features)
+- `GITHUB_TOKEN` - Your GitHub token (for AI API access)
 3. **Vercel Account**: Sign up at https://vercel.com
 
 ## Environment Variables

@@ -40,6 +40,17 @@ def create_app(config_name=None):
         try:
             db.create_all()
             print(f"✅ Database tables created successfully using: {app.config['SQLALCHEMY_DATABASE_URI'][:50]}...")
+            
+            # Create default user if it doesn't exist
+            from src.models.user import User
+            default_user = User.query.filter_by(id=1).first()
+            if not default_user:
+                default_user = User(username='default_user', email='user@example.com')
+                default_user.id = 1  # Explicitly set ID to 1
+                db.session.add(default_user)
+                db.session.commit()
+                print("✅ Default user created successfully")
+                
         except Exception as e:
             print(f"❌ Database connection failed: {e}")
             print("💡 Make sure your DATABASE_URL is correct or remove it to use SQLite")
