@@ -5,8 +5,8 @@ note_bp = Blueprint('note', __name__)
 
 @note_bp.route('/notes', methods=['GET'])
 def get_notes():
-    """Get all notes, ordered by most recently updated"""
-    notes = Note.query.order_by(Note.updated_at.desc()).all()
+    """Get all notes, ordered by order_index, then by most recently updated"""
+    notes = Note.query.order_by(Note.order_index.asc(), Note.updated_at.desc()).all()
     return jsonify([note.to_dict() for note in notes])
 
 @note_bp.route('/notes', methods=['POST'])
@@ -17,7 +17,9 @@ def create_note():
         if not data or 'title' not in data or 'content' not in data:
             return jsonify({'error': 'Title and content are required'}), 400
         
-        note = Note(title=data['title'], content=data['content'])
+        # Get the highest order_index and add 1 to put new notes at the end
+        max_order = db.session.query(db.func.max(Note.order_index)).scalar() or 0
+        note = Note(title=data['title'], content=data['content'], order_index=max_order + 1)
         db.session.add(note)
         db.session.commit()
         return jsonify(note.to_dict()), 201
@@ -70,7 +72,29 @@ def search_notes():
     
     notes = Note.query.filter(
         (Note.title.contains(query)) | (Note.content.contains(query))
-    ).order_by(Note.updated_at.desc()).all()
+    ).order_by(Note.order_index.asc(), Note.updated_at.desc()).all()
     
     return jsonify([note.to_dict() for note in notes])
+
+@note_bp.route('/notes/reorder', methods=['PUT'])
+def reorder_notes():
+    """Reorder notes based on provided array of note IDs"""
+    try:
+        data = request.json
+        if not data or 'note_ids' not in data:
+            return jsonify({'error': 'note_ids array is required'}), 400
+        
+        note_ids = data['note_ids']
+        
+        # Update order_index for each note
+        for index, note_id in enumerate(note_ids):
+            note = Note.query.get(note_id)
+            if note:
+                note.order_index = index
+        
+        db.session.commit()
+        return jsonify({'message': 'Notes reordered successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 

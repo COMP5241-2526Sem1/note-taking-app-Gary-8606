@@ -1,0 +1,37 @@
+# Get all notes
+GET http://localhost:5000/api/notes
+###
+# Create first test note
+POST http://localhost:5000/api/notes
+Content-Type: application/json
+
+{
+  "title": "First Note",
+  "content": "This is the first note for testing drag and drop."
+}
+###
+# Create second test note
+POST http://localhost:5000/api/notes
+Content-Type: application/json
+
+{
+  "title": "Second Note", 
+  "content": "This is the second note for testing drag and drop."
+}
+###
+# Create third test note
+POST http://localhost:5000/api/notes
+Content-Type: application/json
+
+{
+  "title": "Third Note",
+  "content": "This is the third note for testing drag and drop."
+}
+###
+# Test reordering notes (replace IDs with actual note IDs from the GET response above)
+PUT http://localhost:5000/api/notes/reorder
+Content-Type: application/json
+
+{
+  "note_ids": [3, 1, 2]
+}

@@ -321,6 +321,30 @@
         .notes-list::-webkit-scrollbar-thumb:hover {
             background: #5a6fd8;
         }
+
+        /* Drag and Drop Styles */
+        .note-item {
+            cursor: grab;
+        }
+
+        .note-item:active {
+            cursor: grabbing;
+        }
+
+        .note-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .note-item.drag-over {
+            border-top: 3px solid #667eea;
+            margin-top: 3px;
+        }
+
+        .notes-list.drag-active {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
     </style>
 </head>
 <body>
@@ -377,6 +401,7 @@
                 this.notes = [];
                 this.currentNote = null;
                 this.isLoading = false;
+                this.draggedNoteId = null;
                 this.init();
             }
 
@@ -434,7 +459,13 @@
 
                 notesList.innerHTML = this.notes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
-                         data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
+                         data-note-id="${note.id}" 
+                         draggable="true"
+                         onclick="noteTaker.selectNote(${note.id})"
+                         ondragstart="noteTaker.handleDragStart(event)"
+                         ondragend="noteTaker.handleDragEnd(event)"
+                         ondragover="noteTaker.handleDragOver(event)"
+                         ondrop="noteTaker.handleDrop(event)">
                         <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
                         <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)}</div>
@@ -587,12 +618,107 @@
 
                 notesList.innerHTML = filteredNotes.map(note => `
                     <div class="note-item ${this.currentNote && this.currentNote.id === note.id ? 'active' : ''}" 
-                         data-note-id="${note.id}" onclick="noteTaker.selectNote(${note.id})">
+                         data-note-id="${note.id}" 
+                         draggable="true"
+                         onclick="noteTaker.selectNote(${note.id})"
+                         ondragstart="noteTaker.handleDragStart(event)"
+                         ondragend="noteTaker.handleDragEnd(event)"
+                         ondragover="noteTaker.handleDragOver(event)"
+                         ondrop="noteTaker.handleDrop(event)">
                         <div class="note-title">${this.escapeHtml(note.title || 'Untitled')}</div>
                         <div class="note-preview">${this.escapeHtml(note.content || 'No content')}</div>
                         <div class="note-date">${this.formatDate(note.updated_at)}</div>
                     </div>
                 `).join('');
+            }
+
+            handleDragStart(event) {
+                this.draggedNoteId = parseInt(event.target.dataset.noteId);
+                event.target.classList.add('dragging');
+                document.getElementById('notesList').classList.add('drag-active');
+                
+                // Set the drag effect
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/html', event.target.outerHTML);
+            }
+
+            handleDragEnd(event) {
+                event.target.classList.remove('dragging');
+                document.getElementById('notesList').classList.remove('drag-active');
+                
+                // Remove drag-over class from all items
+                document.querySelectorAll('.note-item').forEach(item => {
+                    item.classList.remove('drag-over');
+                });
+                
+                this.draggedNoteId = null;
+            }
+
+            handleDragOver(event) {
+                event.preventDefault();
+                const noteItem = event.target.closest('.note-item');
+                const targetNoteId = parseInt(noteItem.dataset.noteId);
+                
+                if (targetNoteId !== this.draggedNoteId) {
+                    // Remove drag-over class from all items
+                    document.querySelectorAll('.note-item').forEach(item => {
+                        item.classList.remove('drag-over');
+                    });
+                    
+                    // Add drag-over class to current target
+                    noteItem.classList.add('drag-over');
+                }
+            }
+
+            async handleDrop(event) {
+                event.preventDefault();
+                const targetItem = event.target.closest('.note-item');
+                const targetNoteId = parseInt(targetItem.dataset.noteId);
+                
+                if (this.draggedNoteId && targetNoteId !== this.draggedNoteId) {
+                    await this.reorderNotes(this.draggedNoteId, targetNoteId);
+                }
+                
+                // Clean up
+                targetItem.classList.remove('drag-over');
+                this.draggedNoteId = null;
+            }
+
+            async reorderNotes(draggedId, targetId) {
+                try {
+                    // Find the indices of dragged and target notes
+                    const draggedIndex = this.notes.findIndex(note => note.id === draggedId);
+                    const targetIndex = this.notes.findIndex(note => note.id === targetId);
+                    
+                    if (draggedIndex === -1 || targetIndex === -1) return;
+                    
+                    // Create a new array with reordered notes
+                    const reorderedNotes = [...this.notes];
+                    const draggedNote = reorderedNotes.splice(draggedIndex, 1)[0];
+                    reorderedNotes.splice(targetIndex, 0, draggedNote);
+                    
+                    // Update the local notes array
+                    this.notes = reorderedNotes;
+                    this.renderNotesList();
+                    
+                    // Send the new order to the backend
+                    const noteIds = this.notes.map(note => note.id);
+                    const response = await fetch('/api/notes/reorder', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ note_ids: noteIds })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to save new note order');
+                    }
+                    
+                    this.showMessage('Notes reordered successfully!', 'success');
+                } catch (error) {
+                    // Reload notes on error to restore original order
+                    await this.loadNotes();
+                    this.showMessage(`Error reordering notes: ${error.message}`, 'error');
+                }
             }
 
             showMessage(message, type) {
