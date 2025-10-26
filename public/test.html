@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vercel Test</title>
+</head>
+<body>
+    <h1>Vercel Deployment Test</h1>
+    <p>If you can see this, static files are working correctly.</p>
+    <script>
+        fetch('/api/health')
+            .then(response => response.json())
+            .then(data => {
+                document.body.innerHTML += '<p>API Status: ' + data.status + '</p>';
+            })
+            .catch(error => {
+                document.body.innerHTML += '<p>API Error: ' + error + '</p>';
+            });
+    </script>
+</body>
+</html>

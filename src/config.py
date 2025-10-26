@@ -38,7 +38,9 @@ class ProductionConfig(Config):
     def get_database_uri():
         database_url = os.environ.get('DATABASE_URL')
         if not database_url:
-            raise ValueError("DATABASE_URL environment variable is required for production")
+            # For Vercel deployment, use in-memory SQLite (filesystem is read-only)
+            print("⚠️ No DATABASE_URL found, using in-memory SQLite for serverless deployment")
+            return 'sqlite:///:memory:'
         
         # Handle Heroku/Railway postgres URL format (postgres:// -> postgresql://)
         if database_url.startswith('postgres://'):

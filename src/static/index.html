@@ -986,8 +986,8 @@
 
             <div class="note-editor">
                 <div class="editor-header">
-                    <h2 class="editor-title" id="editorTitle">Select a note to edit</h2>
-                    <div class="editor-actions" id="editorActions" style="display: none;">
+                    <h2 class="editor-title" id="editorTitle">New Note</h2>
+                    <div class="editor-actions" id="editorActions">
                         <button class="btn btn-save" id="saveBtn">💾 Save</button>
                         <button class="btn btn-translate" id="translateBtn">🌍 Translate</button>
                         <button class="btn btn-share" id="shareBtn">🔗 Share</button>
@@ -997,7 +997,7 @@
 
                 <div id="messageArea"></div>
 
-                <div id="editorForm" style="display: none;">
+                <div id="editorForm">
                     <div class="form-group">
                         <label class="form-label" for="noteTitle">Title</label>
                         <input type="text" class="form-input" id="noteTitle" placeholder="Enter note title...">
@@ -1009,7 +1009,7 @@
                     </div>
                 </div>
 
-                <div class="empty-state" id="emptyState">
+                <div class="empty-state" id="emptyState" style="display: none;">
                     <h3>Welcome to NoteTaker!</h3>
                     <p>Select an existing note or create a new one to get started.</p>
                 </div>
@@ -1289,6 +1289,10 @@ I'll help you turn it into a structured note!"></textarea>
             async init() {
                 this.bindEvents();
                 await this.loadNotes();
+                // Start with a new note ready to use
+                if (this.notes.length === 0) {
+                    this.createNewNote();
+                }
             }
 
             bindEvents() {
